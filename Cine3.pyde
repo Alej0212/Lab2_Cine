@@ -219,7 +219,7 @@ def draw():
         cartelera()
     elif pantalla == 2:
         entradas()
-    
+
 
     
 
@@ -375,7 +375,11 @@ def entradas():
     text("Asientos: ", width*0.1, height*0.34)
     text(asientos_texto, width*0.185, height*0.34)
     text("Precio: ", width*0.1, height*0.4)
-    text("$ " + str(funcion_seleccionada.precio), width*0.165, height*0.4)
+    if asientos_seleccionados:
+        precio_total = funcion_seleccionada.precio * len(asientos_seleccionados)
+        text("$ " + str(precio_total), width*0.165, height*0.4)
+    else:
+        text("$ 0", width*0.165, height*0.4)
     text("Horario: ", width*0.1, height*0.46)
     text(horarios_texto, width*0.17, height*0.46)
     textAlign(CENTER, CENTER)
