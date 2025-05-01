@@ -14,85 +14,74 @@ hora_actual3 = 0
 arrastrando1 = False
 arrastrando2 = False
 arrastrando3 = False
+funcion_seleccionada = None
+asientos_seleccionados = []
 
 
 
 
 #Clases y listas
-class Sala:
-  def __init__(self, num_filas, num_asientos):
-    self.num_filas = num_filas
-    self.num_asientos = num_asientos
-    self.asientos = []
-    self.funciones = []
-    self.crear_sala()
-
-
-  def crear_sala(self):
-      for i in range(self.num_filas * self.num_asientos):
-        asiento = Seat(i + 1)
-        self.asientos.append(asiento)
-
-
-
-  def mostar_asientos(self):
-      for asiento in self.asientos:
-        if asiento.disponible:
-            print("Asiento {} disponible".format(asiento.num))
-        else:
-            print("Asiento {} ocupado".format(asiento.num))
-
-
-
-  def ocupar_asiento(self, num_fila, num_asiento):
-       for asiento in self.asientos:
-            if asiento.num == num_asiento and asiento.disponible:
-                asiento.ocupar()
-                print("Asiento {} ha sido ocupado".format(num_asiento))
-                return
-                print("Asiento {} no esta disponible".format(num_asiento))
-
-
-
-  def desocupar_asiento(self,  num_asiento):
-       for asiento in self.asientos :
-         if asiento.num == num_asiento and not asiento.disponible:
-           asiento.desocupar()
-           print("Asiento {} ha sido desocupado".format(num_asiento))
-
-
-  def agregar_funcion(self, funcion):
-        self.funciones.append(funcion)
-
-  def mostrar_funciones(self):
-    print("\n=== Funciones en esta sala ===")
-    for funcion in self.funciones:
-        print("\nPelícula: " + funcion.nombre)
-        print("Género: " + funcion.genero)
-        print("Duración: " + str(funcion.duracion) + " min")
-        print("Horarios:")
-        
-        if funcion.horarios:
-            for i in range(len(funcion.horarios)):
-                horario = funcion.horarios[i]
-                if i < len(funcion.asientos_disponibles):
-                    disp = funcion.asientos_disponibles[i]
-                else:
-                    disp = "N/A"
-                print("  - " + horario + " (Asientos disponibles: " + str(disp) + ")")
-        else:
-            print("  - No hay horarios registrados")
-
-
-
 class Seat:
       def __init__(self, num = None, disponible  = True):
         self.num = num
         self.disponible = True
+      
       def ocupar(self):
         self.disponible = False
+      
       def desocupar(self):
         self.disponible = True
+
+
+
+
+
+class Sala:
+    def __init__(self, num_filas, num_asientos):
+        self.num_filas = num_filas
+        self.num_asientos = num_asientos
+        self.asientos = []
+        self.funciones = []
+        self.crear_sala()
+
+
+    def crear_sala(self):
+      for i in range(self.num_filas * self.num_asientos):
+        asiento = Seat(i + 1)
+        self.asientos.append(asiento)
+    
+        
+                
+    def agregar_funcion(self, funcion):
+        self.funciones.append(funcion)
+
+
+
+    def mostrar_funciones(self):
+        print("\n=== Funciones en esta sala ===")
+        for funcion in self.funciones:
+            print("\nPelícula: " + funcion.nombre)
+            print("Género: " + funcion.genero)
+            print("Duración: " + str(funcion.duracion) + " min")
+            print("Horarios:")
+            
+            if funcion.horarios:
+                for i in range(len(funcion.horarios)):
+                    horario = funcion.horarios[i]
+                    if i < len(funcion.asientos_horario):
+                        disp = funcion.asientos_horario[i]
+                    else:
+                        disp = "N/A"
+                    print("  - " + horario + " (Asientos disponibles: " + str(disp) + ")")
+            else:
+                print("  - No hay horarios registrados")
+    
+    
+    
+    def contener_funcion(self, funcion):
+        return funcion in self.funciones        
+
+
 
 
 
@@ -103,11 +92,82 @@ class Funcion:
         self.duracion = duracion
         self.precio = precio
         self.horarios = []
-        self.asientos_disponibles = []
+        self.asientos_horario = []
 
-    def agregar_horario(self, horario, disponibles):
+    def agregar_horario(self, horario, cantidad_asientos):
         self.horarios.append(horario)
-        self.asientos_disponibles.append(disponibles)
+        asientos = [Seat(i + 1) for i in range(cantidad_asientos)]
+        self.asientos_horario.append(asientos)
+        
+    
+    
+    def mostrar_asientos(self, horario):
+        if horario in self.horarios:
+            indice = self.horarios.index(horario)
+            asientos = self.asientos_horario[indice]
+            print("Asientos para el horario: " + horario)
+            for asiento in asientos:
+                estado = "Disponible" if asiento.disponible else "Ocupado"
+                print("Asiento: " + asiento.num + "estado")
+        else:
+            print("Horario no encontrado.")
+
+    def ocupar_asiento(self, horario, numero_asiento):
+        if horario in self.horarios:
+            indice = self.horarios.index(horario)
+            asientos = self.asientos_horario[indice]
+            for asiento in asientos:
+                if asiento.num == numero_asiento:
+                    if asiento.disponible:
+                        asiento.ocupar()
+                        print("Asiento " + str(numero_asiento) + " ocupado en horario " + horario)
+                        return
+                    else:
+                        print("Asiento " + str(numero_asiento) + " ya está ocupado")
+                        return
+            print("Asiento " + str(numero_asiento) + " no encontrado en el horario " + horario)
+        else:
+            print("Horario no encontrado.")
+
+    def desocupar_asiento(self, horario, numero_asiento):
+        if horario in self.horarios:
+            indice = self.horarios.index(horario)
+            asientos = self.asientos_horario[indice]
+            for asiento in asientos:
+                if asiento.num == numero_asiento:
+                    if not asiento.disponible:
+                        asiento.desocupar()
+                        print("Asiento " + str(numero_asiento) + " desocupado en horario " + horario)
+                        return
+                    else:
+                        print("Asiento " + str(numero_asiento) + " ya está dsiponible")
+                        return
+            print("Asiento " + str(numero_asiento) + " no encontrado en el horario " + horario)
+        else:
+            print("Horario no encontrado.")
+    
+
+
+    def asientos_disponibles(self, index_horario):
+        asientos = self.asientos_horario[index_horario]
+        return sum(1 for asiento in asientos if asiento.disponible)
+    
+    
+    
+    def asientos_ocupados(self, horario):
+        if horario not in self.horarios:
+            print("Horario no encontrado.")
+            return []
+        
+        indice = self.horarios.index(horario)
+        asientos = self.asientos_horario[indice]
+    
+        asientos_ocupados = []
+        for asiento in asientos:
+            if not asiento.disponible:
+                asientos_ocupados.append(asiento.num)
+    
+        return asientos_ocupados
 
 
 
@@ -131,23 +191,23 @@ def setup():
     sala3 = Sala(10, 8)
     
     avengers = Funcion("Avengers", "Ficcion", 180, 10000)
-    avengers.agregar_horario("9:00 AM", 5)
+    avengers.agregar_horario("9:00 AM", 80)
     sala1.agregar_funcion(avengers)
     
     rey_leon = Funcion("Rey Leon", "Aventura", 118, 9000)
-    rey_leon.agregar_horario("4:00 PM", 0)
+    rey_leon.agregar_horario("4:00 PM", 80)
     sala2.agregar_funcion(rey_leon)
     
     frozen = Funcion("Frozen", "Animacion", 180, 8000)
-    frozen.agregar_horario("7:00 PM", 10)
+    frozen.agregar_horario("7:00 PM", 80)
     sala3.agregar_funcion(frozen)
     
     while_you_were_spleeping = Funcion("While you were spleeping", "Romance", 180, 10000)
-    while_you_were_spleeping.agregar_horario("10:00 AM", 5)
-    sala1.agregar_funci<on(while_you_were_spleeping)   
+    while_you_were_spleeping.agregar_horario("10:00 AM", 80)
+    sala1.agregar_funcion(while_you_were_spleeping)   
 
     wish_list = Funcion("Wish list", "Romance", 185, 15000)
-    wish_list.agregar_horario("9:00 PM", 0)
+    wish_list.agregar_horario("9:00 PM", 80)
     sala2.agregar_funcion(wish_list)
 
 
@@ -202,7 +262,7 @@ def cartelera():
     fill(255, 255, 255)
     textFont(fonts[0])
     textSize(60)
-    text("CARTELERA", width*0.5, height*0.15)
+    text("CARTELERA", width*0.5, height*0.1)
     
     fill(220)
     stroke(200)
@@ -210,7 +270,7 @@ def cartelera():
     rect(width*0.025 , height*0.2, 300, 60)
     fill(0)
     textSize(30)
-    text("FILTROS", width*0.105, height*0.23)
+    text("FILTROS", width*0.135, height*0.24)
     
     stroke(0)
     strokeWeight(2)
@@ -219,8 +279,8 @@ def cartelera():
     fill(0)
     noStroke()
     circle(width*0.05, height*0.33, 20)
-    text("SALAS", width*0.07, height*0.315)
-    radio_button(salas, width*0.08, height*0.39, 20, seleccion1)
+    text("SALAS", width*0.1, height*0.33)
+    radio_button(salas, width*0.08, height*0.38, 20, seleccion1)
     stroke(0)
     strokeWeight(2)
     fill(255)
@@ -229,7 +289,7 @@ def cartelera():
     noStroke()
     circle(width*0.05, height*0.33 + 167, 20)
     textFont(fonts[0])
-    text("HORARIO", width*0.07, height*0.535)
+    text("HORARIO", width*0.1, height*0.55)
     radio_button(horarios, width*0.08, height*0.62, 20, seleccion2)
     if seleccion2 == 0:
         barra_horas(width*0.05, height*0.5 + 190, 230, 25, horas1, hora_actual1, arrastrando1)
@@ -273,9 +333,10 @@ def cartelera():
                 if cumple_horario:
                     x = width * 0.27 + (contador % 3) * 330
                     y = height * 0.2 + (contador // 3) * 280
+                    disponibles = [funcion.asientos_disponibles(i) for i in range(len(funcion.horarios))]
                     cartel_pelicula(x, y, 300, 250, funcion.nombre, funcion.genero, 
                                     funcion.duracion, str([sala1, sala2, sala3].index(sala) + 1), 
-                                    [str(h) for h in funcion.horarios], funcion.asientos_disponibles)
+                                    [str(h) for h in funcion.horarios], disponibles, funcion)
                     contador += 1
 
 
@@ -286,7 +347,73 @@ def cartelera():
     
     
 def entradas():
-    background(180, 8, 0)
+    background(238, 195, 72)
+    #background(180, 8, 0)
+    stroke(0)
+    fill(255)
+    textFont(fonts[0])
+    textSize(60)
+    textAlign(CENTER, CENTER)
+    text("ENTRADAS", width*0.5, height*0.1)
+    noStroke()
+    rect(width*0.05, height*0.2, width - width*0.1, 615, 10)
+    fill(180, 8, 0)
+    textSize(50)
+    text(funcion_seleccionada.nombre, width*0.5, height*0.25)
+    textFont(fonts[0])
+    textAlign(LEFT)
+    if funcion_seleccionada:
+        sala = obtener_sala(funcion_seleccionada)
+        if sala:
+            num_sala = [sala1, sala2, sala3].index(sala) + 1
+            text("Sala: " + str(num_sala), width*0.1, height*0.27)  
+    disponibles = [funcion_seleccionada.asientos_disponibles(i) for i in range(len(funcion_seleccionada.horarios))]  
+    asientos_texto = ", ".join(str(num) for num in disponibles)
+    horarios_texto = join(funcion_seleccionada.horarios, ", ")
+    textFont(fonts[2])
+    fill(0)
+    text("Asientos: ", width*0.1, height*0.34)
+    text(asientos_texto, width*0.185, height*0.34)
+    text("Precio: ", width*0.1, height*0.4)
+    text("$ " + str(funcion_seleccionada.precio), width*0.165, height*0.4)
+    text("Horario: ", width*0.1, height*0.46)
+    text(horarios_texto, width*0.17, height*0.46)
+    textAlign(CENTER, CENTER)
+    
+    textSize(20)
+    stroke(10)
+    fill(245, 245, 220)
+    textAlign(LEFT)
+    rect(width*0.1, height*0.6, 50, 50, 10)
+    fill(0)
+    text("Disponibles", width*0.15, height*0.64)
+    fill(180, 8, 0)
+    rect(width*0.1, height*0.7, 50, 50, 10)
+    fill(0)
+    text("Vendido", width*0.15, height*0.74)
+    fill(238, 195, 72)
+    rect(width*0.1, height*0.8, 50, 50, 10)
+    fill(0)
+    text("Seleccionado", width*0.15, height*0.84)
+    
+    asientos(550, 130, 50, 50, 10, 8)
+    if len(asientos_seleccionados) > 0:
+        fill(0)
+        textAlign(LEFT)
+        text("Asientos seleccionados: " + ", ".join(map(str, sorted(asientos_seleccionados))), 
+             width*0.1, height*0.55)
+    
+    fill(0)
+    rect(550, 705, 590, 60, 10)
+    textAlign(CENTER, CENTER)
+    fill(255)
+    textSize(40)
+    text("Pantalla", 855, 740)
+    
+    boton_entradas("Comprar", width * 0.1, height * 0.9, 360, 60)
+    
+    icons[2] = resize_img(icons[2], 70)
+    image(icons[2], width*0.94, height*0.89)
 
 
 
@@ -327,6 +454,8 @@ def boton(texto, x, y, ancho, alto):
 def boton_cartelera(texto, x, y, ancho, alto):
     mouse = (mouseX > x and mouseX < x + ancho and 
              mouseY > y and mouseY < y + alto)
+    if mouse and mousePressed:
+        return True
     if mouse:
         fill(220)
     else:
@@ -338,6 +467,29 @@ def boton_cartelera(texto, x, y, ancho, alto):
     fill(0)
     textFont(fonts[2])
     textSize(18)
+    textAlign(CENTER, CENTER)
+    text(texto, x + ancho/2, y + alto/2)
+    
+    return False
+
+
+
+def boton_entradas(texto, x, y, ancho, alto):
+    mouse = (mouseX > x and mouseX < x + ancho and 
+             mouseY > y and mouseY < y + alto)
+    if mouse:
+        fill(180, 8, 0)
+        #fill(240, 60, 40)
+
+    else:
+        fill(255)
+    stroke(200)
+    strokeWeight(1)
+    rect(x, y, ancho, alto, 8)
+    
+    fill(0)
+    textSize(24)
+    textFont(fonts[0])
     textAlign(CENTER, CENTER)
     text(texto, x + ancho/2, y + alto/2)
     
@@ -369,7 +521,7 @@ def radio_button(textos, x, y, diametro, seleccion_actual):
             fill(80)
             
         textFont(fonts[2])
-        text(texto, x + diametro, y + i*spacing - 7.5) 
+        text(texto, x + diametro + 40, y + i*spacing) 
         
 
             
@@ -410,7 +562,8 @@ def barra_horas(x, y, ancho, alto, horas, hora_sel, arrastrando):
     
     
     
-def cartel_pelicula(x, y, ancho, alto, titulo, genero, duracion, sala, horarios, disponibles):
+def cartel_pelicula(x, y, ancho, alto, titulo, genero, duracion, sala, horarios, disponibles, funcion):
+    global funcion_seleccionada, pantalla
     fill(240)
     stroke(0)
     strokeWeight(1)
@@ -456,7 +609,8 @@ def cartel_pelicula(x, y, ancho, alto, titulo, genero, duracion, sala, horarios,
             
         noStroke()
         circle(x + 200, y + 180 + i*30 + 5, 10)
-        boton_cartelera("Entradas", x + 15, y + alto - 45, ancho - 30, 30)
+        boton_entradas = boton_cartelera("Entradas", x + 15, y + alto - 45, ancho - 30, 30)
+        return boton_entradas, funcion
 
 
 
@@ -472,6 +626,45 @@ def hora_24h(horario_str):
         return hora
     except:
         return -1
+    
+
+
+def obtener_sala(funcion_buscada):
+    for sala in [sala1, sala2, sala3]:
+        if sala.contener_funcion(funcion_buscada):
+            return sala
+    return None
+    
+    
+    
+def asientos(xInicial, yInicial, ancho, alto, columnas, filas):
+    global funcion_seleccionada, asientos_seleccionados
+    rectMode(CORNER)
+    textAlign(CENTER, CENTER)
+    textSize(14)
+    
+    index_horario = 0
+    asientos_horario = funcion_seleccionada.asientos_horario[index_horario]
+    for fila in range(filas):
+        for col in range(columnas):
+            x = xInicial + col * (ancho + 10)
+            y = yInicial + fila * (alto + 10) + 100
+            num_asiento = fila * columnas + col + 1
+            asiento = asientos_horario[num_asiento - 1]
+        
+            if num_asiento in asientos_seleccionados:
+                fill(238, 195, 72) 
+            elif asiento.disponible:
+                fill(245, 245, 220) 
+            else:
+                fill(180, 8, 0) 
+            
+            stroke(40)
+            rect(x, y, ancho, alto, 5)
+            
+            fill(0)
+            text(str(fila * columnas + col + 1), x + ancho / 2, y + alto / 2)
+
 
 
 
@@ -480,6 +673,7 @@ def hora_24h(horario_str):
 def mousePressed():
     global pantalla, seleccion1, seleccion2
     global hora_actual1, hora_actual2, hora_actual3
+    global funcion_seleccionada, asientos_seleccionados
     
     if pantalla == 0:
         if boton("CARTELERA", width*0.63, height*0.45, 360, 60):
@@ -489,7 +683,7 @@ def mousePressed():
             
     elif pantalla == 1:    
         for i in range(len(salas)):
-            y_pos = height*0.39 + i*40
+            y_pos = height*0.38 + i*40
             if (dist(mouseX, mouseY, width*0.08, y_pos)) < 10:
                 seleccion1 = i
                 break
@@ -543,6 +737,26 @@ def mousePressed():
             elif (x3 < mouseX < x3 + ancho3 and y3 < mouseY < y3 + alto3):
                 hora_actual3 = int((mouseX - x3) / seg_ancho3)
                 hora_actual3 = constrain(hora_actual3, 0, len(horas3)-1)
+                
+        contador = 0
+        for sala in [sala1, sala2, sala3]:
+            if seleccion1 == -1 or sala == [sala1, sala2, sala3][seleccion1]:
+                for funcion in sala.funciones:
+                    x = width * 0.27 + (contador % 3) * 330
+                    y = height * 0.2 + (contador // 3) * 280
+                    
+                    btn_x = x + 15
+                    btn_y = y + 250 - 45
+                    btn_ancho = 300 - 30
+                    btn_alto = 30
+                    
+                    if (btn_x < mouseX < btn_x + btn_ancho and 
+                        btn_y < mouseY < btn_y + btn_alto):
+                        funcion_seleccionada = funcion
+                        pantalla = 2
+                        return 
+                    
+                    contador += 1
             
         if (width * 0.94 <= mouseX <= width * 0.94 + icons[2].width and height * 0.89 <= mouseY <= height * 0.89 + icons[2].height):
             seleccion1 = -1
@@ -554,6 +768,51 @@ def mousePressed():
             arrastrando2 = False
             arrastrando3 = False
             pantalla = 0
+    
+    
+    elif pantalla == 2:
+        if boton_entradas("Comprar", width * 0.1, height * 0.9, 360, 60):
+            if len(asientos_seleccionados) > 0:
+                for num_asiento in asientos_seleccionados:
+                    if num_asiento - 1 < len(funcion_seleccionada.asientos_horario[0]):
+                        funcion_seleccionada.asientos_horario[0][num_asiento - 1].ocupar()
+                
+                print("Asientos comprados: " + str(asientos_seleccionados))
+                asientos_seleccionados = []
+        else:
+            xInicial, yInicial = 550, 130
+            ancho, alto = 50, 50
+            columnas, filas = 10, 8
+            
+            for fila in range(filas):
+                for col in range(columnas):
+                    x = xInicial + col * (ancho + 10)
+                    y = yInicial + fila * (alto + 10) + 100
+                    num_asiento = fila * columnas + col + 1
+                    
+                    if (x < mouseX < x + ancho and y < mouseY < y + alto):
+                        for horario in funcion_seleccionada.horarios:
+                            if num_asiento not in funcion_seleccionada.asientos_ocupados(horario):
+                                if num_asiento in asientos_seleccionados:
+                                    asientos_seleccionados.remove(num_asiento)
+                                else:
+                                    asientos_seleccionados.append(num_asiento)
+                            return
+                    
+                    
+        if (width * 0.94 <= mouseX <= width * 0.94 + icons[2].width and height * 0.89 <= mouseY <= height * 0.89 + icons[2].height):
+            seleccion1 = -1
+            seleccion2 = -1
+            hora_actual1 = 0
+            hora_actual2 = 0
+            hora_actual3 = 0
+            arrastrando1 = False
+            arrastrando2 = False
+            arrastrando3 = False
+            pantalla = 0
+            funcion_seleccionada = None
+            asientos_seleccionados = []
+            
     
 
 
@@ -588,8 +847,3 @@ def mouseReleased():
         arrastrando2 = False
     elif seleccion2 == 2:
         arrastrando3 = False
-    
-    
-    
-    
-    
