@@ -1,3 +1,5 @@
+import sys
+
 pantalla = 0
 seleccion1 = -1
 seleccion2 = -1
@@ -22,9 +24,9 @@ asientos_seleccionados = []
 
 #Clases y listas
 class Seat:
-      def __init__(self, num = None, disponible  = True):
+      def __init__(self, num = None, disponible  = None):
         self.num = num
-        self.disponible = True
+        self.disponible = disponible
       
       def ocupar(self):
         self.disponible = False
@@ -40,6 +42,8 @@ class Sala:
     def __init__(self, num_filas, num_asientos):
         self.num_filas = num_filas
         self.num_asientos = num_asientos
+        self.ganancias = 0
+        self.personas = 0
         self.asientos = []
         self.funciones = []
         self.crear_sala()
@@ -168,6 +172,101 @@ class Funcion:
                 asientos_ocupados.append(asiento.num)
     
         return asientos_ocupados
+    
+    
+    
+    
+
+#Funciones archivos
+def cargar_informacion(nombre_archivo):
+    ruta = sketchPath(nombre_archivo)
+    with open(ruta, "r") as archivo:
+        lineas = archivo.readlines()
+
+
+
+    i = 0
+    while i < len(lineas):
+        linea = lineas[i].strip()
+
+        if linea.startswith("SALA"):
+            _, numero = linea.split(",")
+            numero = int(numero)
+            i += 1
+
+            while i < len(lineas) and not lineas[i].startswith("---"):
+                if lineas[i].startswith("FUNCION"):
+                    _, nombre, genero, duracion, precio = lineas[i].strip().split(",")
+                    duracion = int(duracion)
+                    precio = int(precio)
+                    funcion = Funcion(nombre, genero, duracion, precio)
+                    i += 1
+
+                    while i < len(lineas) and lineas[i].startswith("HORARIO"):
+                        _, horario = lineas[i].strip().split(",")
+                        i += 1
+                        asientos_plano = []
+                        
+                        for fila in range(8):
+                            linea_asientos = lineas[i].strip()
+                            for col, c in enumerate(linea_asientos):
+                                num = fila * len(linea_asientos) + col + 1
+                                disponible = (c == "0")
+                                asientos_plano.append(Seat(num=num, disponible=disponible))
+                            i += 1
+                        
+                        funcion.horarios.append(horario)
+                        funcion.asientos_horario.append(asientos_plano)
+
+                    if numero == 1:
+                        sala1.agregar_funcion(funcion)
+                    elif numero == 2:
+                        sala2.agregar_funcion(funcion)
+                    elif numero == 3:
+                        sala3.agregar_funcion(funcion)
+                else:
+                    i += 1
+        i += 1
+
+
+
+def guardar_informacion(nombre_archivo):
+    ruta = sketchPath(nombre_archivo)
+    lineas = []
+    for num, sala in enumerate([sala1, sala2, sala3], start=1):
+        lineas.append("SALA,"+str(num)+"\n")
+        for funcion in sala.funciones:
+            lineas.append("FUNCION,"+str(funcion.nombre)+","+str(funcion.genero)+","+str(funcion.duracion)+","+str(funcion.precio)+"\n")
+            for i, horario in enumerate(funcion.horarios):
+                lineas.append("HORARIO,"+str(horario)+"\n")
+                asientos = funcion.asientos_horario[i]
+                columnas = len(asientos) // 8
+                for fila in range(8):
+                    inicio = fila * columnas
+                    fin = inicio + columnas
+                    filaar = "".join("0" if asiento.disponible else "1" for asiento in asientos[inicio:fin])
+                    lineas.append(filaar + "\n")
+        lineas.append("---\n")
+    with open(ruta, "w") as f:
+        f.writelines(lineas)
+
+
+
+def ganancias():
+    for sala in [sala1, sala2, sala3]:
+        sala.personas = 0
+        sala.ganancias = 0.0
+    for sala in [sala1, sala2, sala3]:
+        for funcion in sala.funciones:
+            for i, horario in enumerate(funcion.horarios):
+                asientos = funcion.asientos_horario[i]
+                for asiento in asientos:
+                    if asiento.disponible == False:
+                        sala.personas = sala.personas + 1
+                        #print(sala.personas)
+                        sala.ganancias = sala.ganancias + funcion.precio
+                        #print(sala.ganancias)
+
 
 
 
@@ -181,6 +280,9 @@ def setup():
     icons.append(loadImage("icon3.png"))
     icons.append(loadImage("icon8.png"))
     icons.append(loadImage("icon9.png"))
+    icons.append(loadImage("icon10.png"))
+    icons.append(loadImage("icon12.png"))
+    icons.append(loadImage("icon13.png"))
     
     fonts.append(createFont("font3.ttf", 28))
     fonts.append(createFont("font2.ttf", 60))
@@ -189,26 +291,8 @@ def setup():
     sala1 = Sala(10, 8)
     sala2 = Sala(10, 8)
     sala3 = Sala(10, 8)
-    
-    avengers = Funcion("Avengers", "Ficcion", 180, 10000)
-    avengers.agregar_horario("9:00 AM", 80)
-    sala1.agregar_funcion(avengers)
-    
-    rey_leon = Funcion("Rey Leon", "Aventura", 118, 9000)
-    rey_leon.agregar_horario("4:00 PM", 80)
-    sala2.agregar_funcion(rey_leon)
-    
-    frozen = Funcion("Frozen", "Animacion", 180, 8000)
-    frozen.agregar_horario("7:00 PM", 80)
-    sala3.agregar_funcion(frozen)
-    
-    while_you_were_spleeping = Funcion("While you were spleeping", "Romance", 180, 10000)
-    while_you_were_spleeping.agregar_horario("10:00 AM", 80)
-    sala1.agregar_funcion(while_you_were_spleeping)   
+    cargar_informacion("Informacion.txt")
 
-    wish_list = Funcion("Wish list", "Romance", 185, 15000)
-    wish_list.agregar_horario("9:00 PM", 80)
-    sala2.agregar_funcion(wish_list)
 
 
 
@@ -219,6 +303,8 @@ def draw():
         cartelera()
     elif pantalla == 2:
         entradas()
+    elif pantalla == 3:
+        informacion()
 
 
     
@@ -250,9 +336,12 @@ def inicio():
     text("Cine Cultural", width*0.75, height*0.25)
     text("Barranquilla", width*0.8, height*0.36)
     
-    boton("CARTELERA", width*0.63, height*0.45, 360, 60)
-    boton("ENTRADAS", width*0.63, height*0.55, 360, 60)
-    boton("ADMINISTRADOR", width*0.63, height*0.65, 360, 60)
+    boton("CARTELERA", width*0.63, height*0.55, 360, 60)
+    #boton("ENTRADAS", width*0.63, height*0.55, 360, 60)
+    boton("INFORMACION", width*0.63, height*0.65, 360, 60)
+    
+    icons[5] = resize_img(icons[5], 70)
+    image(icons[5], width*0.94, height*0.78)
     
 
 
@@ -348,7 +437,6 @@ def cartelera():
     
 def entradas():
     background(238, 195, 72)
-    #background(180, 8, 0)
     stroke(0)
     fill(255)
     textFont(fonts[0])
@@ -418,8 +506,87 @@ def entradas():
     
     icons[2] = resize_img(icons[2], 70)
     image(icons[2], width*0.94, height*0.89)
-
-
+    
+    
+    
+def informacion():
+    background(180, 8, 0)
+    fill(255)
+    rect(45, 50, width*0.11, height)
+    rect(1165, 50, width*0.11, height)
+    image(icons[3], 0, 50)
+    image(icons[3], 1120, 50)
+    fill(0)
+    noStroke()
+    rect(0 , 0, width, height*0.125)
+    rect(0, height*0.875, width, height*0.125)   
+    fill(255)
+    textFont(fonts[0])
+    textSize(60)
+    textAlign(CENTER, CENTER)
+    text("INFORMACION", width*0.5, height*0.2)
+    
+    fill(255)
+    stroke(255)
+    strokeWeight(5)
+    rect(230, 200, width*0.2, height*0.07, 20)
+    rect(545, 200, width*0.2, height*0.07, 20)
+    rect(860, 200, width*0.2, height*0.07, 20)
+    fill(180, 8, 0)
+    textFont(fonts[2])
+    textSize(30)
+    text("Sala 1", width*0.27, height*0.295)
+    text("Sala 2", width*0.27 + 315, height*0.295)
+    text("Sala 3", width*0.27 + 630, height*0.295)
+    icons[4] = resize_img(icons[4], 200)
+    image(icons[4], 260, 255)
+    image(icons[4], 575, 255)
+    image(icons[4], 890, 255)
+    fill(0)
+    textFont(fonts[0])
+    textSize(50)
+    text("1", width*0.263, height*0.413)
+    text("2", width*0.263 + 315, height*0.413)
+    text("3", width*0.263 + 630, height*0.413)
+    
+    fill(180, 8, 0)
+    stroke(255)
+    strokeWeight(3)
+    rect(230, 470, width*0.12, height*0.05, 10)
+    rect(230, 530, width*0.12, height*0.05, 10)
+    rect(545, 470, width*0.12, height*0.05, 10)
+    rect(545, 530, width*0.12, height*0.05, 10)
+    rect(860, 470, width*0.12, height*0.05, 10)
+    rect(860, 530, width*0.12, height*0.05, 10)
+    fill(255)
+    textSize(20)
+    text("Personas", width*0.23, height*0.6355)
+    text("Ganancias", width*0.23, height*0.715)
+    text(str(sala1.personas), width*0.24, height*0.6355)
+    text("Personas", width*0.23 + 315, height*0.6355)
+    text("Ganancias", width*0.23 + 315, height*0.715)
+    #
+    text("Personas", width*0.23 + 630, height*0.6355)
+    text("Ganancias", width*0.23 + 630, height*0.715)
+    #
+    
+    textFont(fonts[0])
+    textSize(40)
+    text("Total", width*0.4, height*0.82)
+    fill(238, 195, 72)
+    stroke(0)
+    rect(width*0.4 + 60, height*0.795, 250, 40, 20)
+    textSize(30)
+    fill(0)
+    text("$ ", width*0.47, height*0.82)
+    #
+    
+    fill(180, 8, 0)
+    rect(width*0.935, height*0.775, 85, 75)
+    icons[2] = resize_img(icons[2], 70)
+    image(icons[2], width*0.94, height*0.78)
+    
+    
 
 
 #Funciones gráficas
@@ -680,11 +847,16 @@ def mousePressed():
     global funcion_seleccionada, asientos_seleccionados
     
     if pantalla == 0:
-        if boton("CARTELERA", width*0.63, height*0.45, 360, 60):
+        if boton("CARTELERA", width*0.63, height*0.55, 360, 60):
             pantalla = 1
-        if boton("ENTRADAS", width*0.63, height*0.55, 360, 60):
-            pantalla = 2
+        if boton("INFORMACION", width*0.63, height*0.65, 360, 60):
+            pantalla = 3
             
+        if (width * 0.94 <= mouseX <= width * 0.94 + icons[5].width and height * 0.78 <= mouseY <= height * 0.78 + icons[5].height):
+            print("hola")
+            #exit()
+         
+               
     elif pantalla == 1:    
         for i in range(len(salas)):
             y_pos = height*0.38 + i*40
@@ -781,7 +953,8 @@ def mousePressed():
                     if num_asiento - 1 < len(funcion_seleccionada.asientos_horario[0]):
                         funcion_seleccionada.asientos_horario[0][num_asiento - 1].ocupar()
                 
-                print("Asientos comprados: " + str(asientos_seleccionados))
+                ganancias()
+                guardar_informacion("Informacion.txt")
                 asientos_seleccionados = []
         else:
             xInicial, yInicial = 550, 130
@@ -816,6 +989,12 @@ def mousePressed():
             pantalla = 0
             funcion_seleccionada = None
             asientos_seleccionados = []
+            
+            
+            
+    elif pantalla == 3:
+        if (width * 0.94 <= mouseX <= width * 0.94 + icons[2].width and height * 0.78 <= mouseY <= height * 0.78 + icons[2].height):
+            pantalla = 0
             
     
 
